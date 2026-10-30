@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analizador de Ajedrez</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#edf2fa;background:#0e1421}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 0% 0%,#192742,#0e1421 55%);min-height:100vh}header{max-width:1220px;margin:auto;padding:28px 20px 14px}h1{font-size:clamp(25px,3vw,36px);letter-spacing:-1.3px;margin:0 0 8px}.sub{color:#99a9c3;font-size:14px}.layout{max-width:1220px;padding:12px 20px 50px;margin:auto;display:grid;grid-template-columns:minmax(0,620px) minmax(290px,1fr);gap:24px}.panel{background:#172134;border:1px solid #2a3850;border-radius:18px;box-shadow:0 16px 48px #03071140;padding:18px}.board{width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);border-radius:7px;overflow:hidden;box-shadow:0 12px 24px #0005}.sq{border:0;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;min-width:0;padding:0;aspect-ratio:1;font-size:clamp(25px,5vw,56px);font-family:'Segoe UI Symbol','DejaVu Sans',serif;line-height:1}.light{background:#e9d8b8}.dark{background:#9f795a}.sq.selected{box-shadow:inset 0 0 0 5px #ffca39}.sq.legal:after{content:"";width:25%;height:25%;border-radius:50%;background:#1c8448b0;position:absolute}.sq.capture:after{content:"";inset:5%;border:5px solid #1c8448a8;border-radius:50%;position:absolute}.sq.best{box-shadow:inset 0 0 0 5px #47cdff}.piece{position:relative;z-index:1;text-shadow:0 2px 2px #0006}.whitePiece{color:#fffcef;-webkit-text-stroke:1px #252525}.blackPiece{color:#141821;-webkit-text-stroke:.5px #e9e4dc}.coord{position:absolute;font-size:10px;font-weight:800;left:4px;top:3px;color:#303030a0}.rank{position:absolute;font-size:10px;right:4px;bottom:2px;color:#303030a0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}button.action{background:#293853;border:1px solid #42546f;color:#eff5fd;border-radius:11px;padding:11px 14px;font-weight:650;cursor:pointer}button.action:hover{background:#364765}button.action.primary{background:#fc9b39;color:#1f1308;border-color:#fc9b39}.sectiontitle{font-size:13px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:#aab9d2;margin:0 0 12px}.status{padding:12px 14px;border-radius:11px;background:#111b2d;color:#bcd0e8;font-size:13px;margin-top:14px}.reco{padding:18px;border-radius:14px;background:linear-gradient(140deg,#283b55,#1a2a3c);border:1px solid #47617c;margin-bottom:18px}.reco strong{font-size:34px;color:#6ad5fe;display:block;line-height:1.4}.reco .mini{color:#b0c2d5;font-size:12px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}select,input{background:#101a2a;border:1px solid #42536a;border-radius:10px;color:#fff;padding:11px;font:inherit;min-width:0}input{width:100%;flex:1}.fieldlabel{font-size:13px;color:#a6b7d0;margin:16px 0 7px;display:block}.muted{color:#9fb1c9;font-size:13px;line-height:1.5}.movelist{max-height:230px;overflow:auto;background:#0f192a;border:1px solid #34425a;border-radius:10px;padding:10px;font-size:14px;line-height:2}.move{display:inline-block;margin-right:10px}.move span{color:#70849d}.line{word-break:break-word;color:#cbd9ec;font-size:13px;line-height:1.6}.pill{padding:5px 8px;border-radius:99px;background:#344760;color:#b9d8f3;font-size:12px}.result{font-weight:700;margin-top:12px}a{color:#78d1ff}@media(max-width:850px){.layout{grid-template-columns:1fr}.sq{font-size:clamp(28px,8vw,62px)}}
+</style>
+</head>
+<body>
+<header><h1>♞ Analizador de ajedrez</h1><div class="sub">Registrá la partida, mirá la recomendación del motor y explorá variantes.</div></header>
+<main class="layout">
+<section class="panel">
+<div class="board" id="board" aria-label="Tablero de ajedrez"></div>
+<div class="toolbar"><button id="undo" class="action">↶ Deshacer</button><button id="reset" class="action">↻ Nueva partida</button><button id="flip" class="action">⇅ Girar tablero</button></div>
+<div id="turn" class="status">Cargando reglas de ajedrez…</div>
+<p class="muted">Seleccioná una pieza y después una casilla válida. Introducí tanto tus movimientos como los del rival.</p>
+</section>
+<aside class="panel">
+<h2 class="sectiontitle">Recomendación de Stockfish</h2>
+<div class="reco"><div class="mini" id="engineStatus">Preparando motor…</div><strong id="best">—</strong><div class="mini" id="evaluation">Evaluación pendiente</div></div>
+<div class="row"><span class="pill" id="side">Turno: blancas</span><span class="pill" id="depthLabel">Profundidad: —</span></div>
+<label class="fieldlabel" for="depth">Profundidad del análisis</label><select id="depth"><option value="10">Rápido (10)</option><option value="14" selected>Equilibrado (14)</option><option value="18">Profundo (18)</option></select>
+<label class="fieldlabel" for="moveInput">Cargar movimiento (SAN o coordenadas)</label><div class="row"><input id="moveInput" placeholder="Ej: e4, Cf3, Nf3, e2e4" autocomplete="off"><button class="action primary" id="enter">Agregar</button></div>
+<div class="muted" id="inputError" role="alert" style="min-height:20px;margin-top:7px"></div>
+<label class="fieldlabel">Continuación sugerida (variante)</label><div id="variation" class="line">El motor mostrará aquí la secuencia calculada.</div>
+<label class="fieldlabel">Historial de movimientos</label><div id="moves" class="movelist">Todavía no hay movimientos.</div>
+<button class="action" id="copyPgn" style="margin-top:10px">Copiar partida PGN</button>
+<p class="muted">El motor evalúa la posición actual; ninguna jugada asegura ganar. Usalo para practicar o en partidas donde esté permitida la asistencia externa.</p>
+</aside></main>
+<script type="module">
+import {Chess} from 'https://cdn.jsdelivr.net/npm/chess.js@1.4.0/dist/esm/chess.js';
+const game = new Chess(), files='abcdefgh', icons={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟︎'};
+const $=s=>document.querySelector(s);let selected=null,flipped=false,worker=null,latestFen='',pendingSearch=0,lastBest=null,analysis='',engineReady=false,depth=14;
+function legalMove(from,to,promo='q'){try{return game.move({from,to,promotion:promo})}catch{return null}}
+function uciToSan(uci){const copy=new Chess(game.fen());try{const m=copy.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||'q'});return m?.san||uci}catch{return uci}}
+function coords(){const out=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)out.push(files[flipped?7-c:c]+(flipped?r+1:8-r));return out}
+function render(){const b=$('#board');b.innerHTML='';const moves=selected?game.moves({square:selected,verbose:true}):[];for(const name of coords()){
+const item=game.get(name),row=8-Number(name[1]),col=files.indexOf(name[0]),s=document.createElement('button');s.type='button';s.className=`sq ${(row+col)%2?'dark':'light'}`;s.setAttribute('aria-label',`${name} ${item?item.color+item.type:'vacía'}`);
+if(selected===name)s.classList.add('selected');if(moves.some(x=>x.to===name))s.classList.add(item?'capture':'legal');if(lastBest&&(name===lastBest.slice(0,2)||name===lastBest.slice(2,4)))s.classList.add('best');
+if(item){const p=document.createElement('span');p.className=`piece ${item.color==='w'?'whitePiece':'blackPiece'}`;p.textContent=icons[item.color+item.type];s.append(p)}
+if((flipped?col===7:col===0)){const a=document.createElement('span');a.className='coord';a.textContent=name[1];s.append(a)}
+if((flipped?row===0:row===7)){const a=document.createElement('span');a.className='rank';a.textContent=name[0];s.append(a)}
+s.addEventListener('click',()=>clickSquare(name));b.append(s)}
+const turn=game.turn()==='w'?'blancas':'negras';$('#side').textContent='Turno: '+turn;$('#turn').textContent=game.isCheckmate()?`Jaque mate: ganan las ${game.turn()==='w'?'negras':'blancas'}.`:game.isDraw()?'Tablas.':`Juegan ${turn}${game.isCheck()?' — ¡Jaque!':''}`;
+const h=game.history();$('#moves').innerHTML=h.length?h.map((x,i)=>`<span class="move">${i%2===0?`<span>${Math.floor(i/2)+1}.</span> `:''}${x.replaceAll('<','&lt;')}</span>`).join(''):'Todavía no hay movimientos.';$('#moves').scrollTop=$('#moves').scrollHeight}
+function clickSquare(name){if(game.isGameOver())return;const p=game.get(name);if(selected){const possible=game.moves({square:selected,verbose:true}).filter(m=>m.to===name);if(possible.length){let promo='q';if(possible.some(m=>m.flags.includes('p'))){const reply=prompt('Promoción: q (dama), r (torre), b (alfil), n (caballo)','q');if(reply===null)return;promo=['q','r','b','n'].includes(reply.toLowerCase())?reply.toLowerCase():'q'}if(legalMove(selected,name,promo)){selected=null;changed();return}}}selected=p&&p.color===game.turn()?name:null;render()}
+function typed(){let s=$('#moveInput').value.trim();if(!s)return;let result=null;try{if(/^[a-h][1-8][a-h][1-8][qrbn]?$/i.test(s))result=game.move({from:s.slice(0,2).toLowerCase(),to:s.slice(2,4).toLowerCase(),promotion:(s[4]||'q').toLowerCase()});else result=game.move(s)}catch{}if(!result){$('#inputError').textContent='Movimiento ilegal o no reconocido para la posición actual.';return}$('#moveInput').value='';$('#inputError').textContent='';selected=null;changed()}
+function changed(){lastBest=null;render();analyze()}
+function initialize(){try{worker=new Worker('./stockfish-19-lite-single.js');worker.onmessage=e=>onEngine(String(e.data));worker.onerror=e=>{$('#engineStatus').textContent='Error al abrir Stockfish. Revisá los archivos y el servidor.';engineReady=false};worker.postMessage('uci');$('#engineStatus').textContent='Cargando Stockfish…'}catch(e){$('#engineStatus').textContent='Para usar Stockfish, publicá estos archivos en GitHub Pages (ver instrucciones).'}}
+function onEngine(line){if(line.includes('uciok')){worker.postMessage('isready');return}if(line.includes('readyok')){engineReady=true;$('#engineStatus').textContent='Motor listo';analyze();return}
+if(!engineReady||game.fen()!==latestFen)return;
+if(line.startsWith('info ')&&line.includes(' pv ')){const d=Number(line.match(/\bdepth (\d+)/)?.[1]||0);if(!d)return;$('#depthLabel').textContent=`Profundidad: ${d}`;
+const cp=line.match(/\bscore cp (-?\d+)/),mate=line.match(/\bscore mate (-?\d+)/);if(cp){const score=Number(cp[1])*(game.turn()==='w'?1:-1)/100;$('#evaluation').textContent='Evaluación (blancas): '+(score>=0?'+':'')+score.toFixed(2)}else if(mate){const score=Number(mate[1]);$('#evaluation').textContent=`Mate previsto en ${Math.abs(score)} (${score>0?'favor del turno actual':'contra el turno actual'})`}
+const seq=line.split(' pv ')[1].trim().split(/\s+/).slice(0,10),copy=new Chess(game.fen()),san=[];for(const u of seq){try{const m=copy.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});if(!m)break;san.push(m.san)}catch{break}}$('#variation').textContent=san.join(' → ')||'—';if(seq[0]){lastBest=seq[0];$('#best').textContent=uciToSan(seq[0])+`  (${seq[0].slice(0,2)} → ${seq[0].slice(2,4)})`;render()}}
+if(line.startsWith('bestmove ')){$('#engineStatus').textContent='Análisis terminado';pendingSearch=0}}
+function analyze(){lastBest=null;$('#best').textContent='—';$('#evaluation').textContent='Evaluación pendiente';$('#variation').textContent='Calculando…';$('#depthLabel').textContent='Profundidad: —';render();if(game.isGameOver()){$('#engineStatus').textContent='Partida finalizada';$('#variation').textContent='No quedan jugadas.';return}if(!worker||!engineReady){$('#engineStatus').textContent='Motor no disponible. Revisá los archivos de Stockfish.';return}
+latestFen=game.fen();worker.postMessage('stop');worker.postMessage('position fen '+latestFen);worker.postMessage('go depth '+depth);$('#engineStatus').textContent='Analizando posición…'}
+$('#enter').addEventListener('click',typed);$('#moveInput').addEventListener('keydown',e=>{if(e.key==='Enter')typed()});$('#undo').addEventListener('click',()=>{game.undo();selected=null;changed()});$('#reset').addEventListener('click',()=>{if(game.history().length&&!confirm('¿Empezar una partida nueva?'))return;game.reset();selected=null;changed()});$('#flip').addEventListener('click',()=>{flipped=!flipped;render()});$('#depth').addEventListener('change',e=>{depth=Number(e.target.value);analyze()});$('#copyPgn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(game.pgn());$('#inputError').textContent='PGN copiado.'}catch{$('#inputError').textContent='No se pudo copiar en este navegador.'}});
+render();initialize();
+</script>
+</body></html>
